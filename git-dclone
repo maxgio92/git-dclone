@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+URL="${1}"
+src_dir="${SRC_DIR:-src}"
+SRC="${HOME}/${src_dir}"
+
+CLONE_PATH=
+
+set_clone_path() {
+	local provider=
+	local user=
+	local repo=
+
+	# Is the URL for SSH?
+	if [[ "${1}" == *"@"* ]]; then
+		url=${1##ssh://}
+		provider="$(echo -n ${url} | cut -d '/' -f1 | cut -d ':' -f1 | cut -d '@' -f2)"
+		user="$(echo -n ${url} | cut -d '/' -f1 | cut -d ':' -f2)"
+		repo="$(echo -n ${url} | cut -d '/' -f2)"
+	else
+		url=${1##https://}
+		provider="$(echo -n ${url} | cut -d '/' -f1)"
+		user="$(echo -n ${url} | cut -d '/' -f2)"
+		repo="$(echo -n ${url} | cut -d '/' -f3)"
+	fi
+
+	repo="${repo//.git/}"
+	CLONE_PATH="${SRC}/${provider}/${user}/${repo}"
+}
+
+main() {
+	set_clone_path "${URL}"
+	mkdir -p "${CLONE_PATH}"
+	set -x
+	git clone "${URL}" "${CLONE_PATH}"
+}
+
+main "${@}"
